@@ -1010,6 +1010,12 @@ static int tls1_check_cert_param(SSL *s, X509 *x, int set_ee_md)
 #  define tlsext_sigalg_ecdsa(md) md, TLSEXT_signature_ecdsa,
 # endif
 
+# ifdef OPENSSL_NO_GOST
+#  define tlsext_sigalg_gost01(md) /* */
+# else
+#  define tlsext_sigalg_gost01(md) md, TLSEXT_signature_gost01,
+# endif
+
 # define tlsext_sigalg(md) \
                 tlsext_sigalg_rsa(md) \
                 tlsext_sigalg_dsa(md) \
@@ -1026,6 +1032,9 @@ static unsigned char tls12_sigalgs[] = {
 # endif
 # ifndef OPENSSL_NO_SHA
         tlsext_sigalg(TLSEXT_hash_sha1)
+# endif
+# ifndef OPENSSL_NO_GOST
+        tlsext_sigalg_gost01(TLSEXT_hash_gost94)
 # endif
 };
 
@@ -3615,13 +3624,15 @@ static tls12_lookup tls12_md[] = {
     {NID_sha224, TLSEXT_hash_sha224},
     {NID_sha256, TLSEXT_hash_sha256},
     {NID_sha384, TLSEXT_hash_sha384},
-    {NID_sha512, TLSEXT_hash_sha512}
+    {NID_sha512, TLSEXT_hash_sha512},
+    {NID_id_GostR3411_94, TLSEXT_hash_gost94}
 };
 
 static tls12_lookup tls12_sig[] = {
     {EVP_PKEY_RSA, TLSEXT_signature_rsa},
     {EVP_PKEY_DSA, TLSEXT_signature_dsa},
-    {EVP_PKEY_EC, TLSEXT_signature_ecdsa}
+    {EVP_PKEY_EC, TLSEXT_signature_ecdsa},
+    {NID_id_GostR3410_2001, TLSEXT_signature_gost01}
 };
 
 static int tls12_find_id(int nid, tls12_lookup *table, size_t tlen)
@@ -3697,6 +3708,10 @@ const EVP_MD *tls12_get_hash(unsigned char hash_alg)
     case TLSEXT_hash_sha512:
         return EVP_sha512();
 # endif
+# ifndef OPENSSL_NO_GOST
+    case TLSEXT_hash_gost94:
+        return EVP_get_digestbynid(NID_id_GostR3411_94);
+# endif
     default:
         return NULL;
 
@@ -3717,6 +3732,10 @@ static int tls12_get_pkey_idx(unsigned char sig_alg)
 # ifndef OPENSSL_NO_ECDSA
     case TLSEXT_signature_ecdsa:
         return SSL_PKEY_ECC;
+# endif
+# ifndef OPENSSL_NO_GOST
+    case TLSEXT_signature_gost01:
+        return SSL_PKEY_GOST01;
 # endif
     }
     return -1;
@@ -3923,6 +3942,10 @@ int tls1_process_sigalgs(SSL *s)
 # ifndef OPENSSL_NO_ECDSA
         if (!c->pkeys[SSL_PKEY_ECC].digest)
             c->pkeys[SSL_PKEY_ECC].digest = EVP_sha1();
+# endif
+# ifndef OPENSSL_NO_GOST
+        if (!c->pkeys[SSL_PKEY_GOST01].digest)
+            c->pkeys[SSL_PKEY_GOST01].digest = EVP_get_digestbynid(NID_id_GostR3411_94);
 # endif
     }
     return 1;
