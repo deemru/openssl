@@ -3069,6 +3069,7 @@ int ssl3_get_cert_verify(SSL *s)
     }
 
     if (SSL_USE_SIGALGS(s)) {
+        unsigned char signature[64];
         long hdatalen = 0;
         void *hdata;
         hdatalen = BIO_get_mem_data(s->s3->handshake_buffer, &hdata);
@@ -3086,6 +3087,12 @@ int ssl3_get_cert_verify(SSL *s)
             SSLerr(SSL_F_SSL3_GET_CERT_VERIFY, ERR_R_EVP_LIB);
             al = SSL_AD_INTERNAL_ERROR;
             goto f_err;
+        }
+
+        if( i == 64 && pkey->type == NID_id_GostR3410_2001 )
+        {
+            for( i = 0; i < 64; i++ ) signature[63 - i] = p[i];
+            p = signature;
         }
 
         if (EVP_VerifyFinal(&mctx, p, i, pkey) <= 0) {
