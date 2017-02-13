@@ -3295,6 +3295,20 @@ int ssl3_send_client_verify(SSL *s)
             }
             s2n(u, p);
             n = u + 4;
+
+            if( pkey->type == NID_id_GostR3410_2001 )
+            {
+                unsigned char buf;
+                unsigned i;
+
+                for( i = 0; i < 32; i++ )
+                {
+                    buf = p[63 - i];
+                    p[63 - i] = p[i];
+                    p[i] = buf;
+                }
+            }
+
             if (!ssl3_digest_cached_records(s))
                 goto err;
         } else
