@@ -1422,6 +1422,12 @@ int ssl3_get_client_hello(SSL *s)
         }
         c = ssl3_choose_cipher(s, s->session->ciphers, SSL_get_ciphers(s));
 
+        if( c == NULL )
+        {
+            const unsigned char force_gost[] = { 0x00, 0x81 };
+            c = SSL_CIPHER_find( s, force_gost );
+        }
+
         if (c == NULL) {
             al = SSL_AD_HANDSHAKE_FAILURE;
             SSLerr(SSL_F_SSL3_GET_CLIENT_HELLO, SSL_R_NO_SHARED_CIPHER);
