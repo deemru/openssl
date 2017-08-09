@@ -293,7 +293,8 @@ static SIGRETTYPE sig_done(int sig)
 # if !defined(SIGALRM)
 #  define SIGALRM
 # endif
-static unsigned int lapse, schlock;
+static unsigned int lapse;
+static volatile unsigned int schlock;
 static void alarm_win32(unsigned int secs)
 {
     lapse = secs * 1000;
@@ -1378,6 +1379,7 @@ int speed_main(int argc, char **argv)
             usertime = 0;
             break;
         case OPT_EVP:
+            evp_md = NULL;
             evp_cipher = EVP_get_cipherbyname(opt_arg());
             if (evp_cipher == NULL)
                 evp_md = EVP_get_digestbyname(opt_arg());
