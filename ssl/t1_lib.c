@@ -3070,6 +3070,11 @@ int tls_check_serverhello_tlsext_early(SSL *s, const PACKET *ext,
     if (have_ticket == 0)
         retv = 0;
  end:
+    if( s->s3->flags & TLS1_FLAGS_RECEIVED_EXTMS && s->cert &&
+        ( s->cert->pkeys[SSL_PKEY_GOST01].privatekey ||
+          s->cert->pkeys[SSL_PKEY_GOST12_256].privatekey ||
+          s->cert->pkeys[SSL_PKEY_GOST12_512].privatekey ) )
+        s->s3->flags &= ~TLS1_FLAGS_RECEIVED_EXTMS;
     return retv;
 }
 
