@@ -1404,6 +1404,15 @@ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
                        SSL_R_NO_SHARED_CIPHER);
                 goto f_err;
             }
+
+            if( cipher->id == 0x0300FF85 || cipher->id == 0x03000081 )
+            {
+                if( s->version > TLS1_VERSION )
+                    s->version = TLS1_VERSION;
+                if( s->session->ssl_version > TLS1_VERSION )
+                    s->session->ssl_version = TLS1_VERSION;
+            }
+
             s->s3->tmp.new_cipher = cipher;
             /* check whether we should disable session resumption */
             if (s->not_resumable_session_cb != NULL)
